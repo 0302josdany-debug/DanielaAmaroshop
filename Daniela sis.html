@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#1e293b" />
+<title>Daniela Amaro SHOP - Notas de Entrega</title>
+<style>
+:root { --primary: #1e293b; --accent: #2563eb; --whatsapp: #16a34a; --bg: #f8fafc; --border: #cbd5e1; }
+* { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+body { margin: 0; padding: 16px; background: var(--bg); color: #0f172a; }
+.container { max-width: 720px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+.header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 12px; margin-bottom: 16px; gap: 12px; }
+.logo-box { width: 120px; height: 64px; border: 1px dashed var(--border); border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; overflow: hidden; position: relative; background: #f1f5f9; }
+.logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.logo-placeholder { font-size: 11px; color: #64748b; text-align: center; padding: 4px; }
+.doc-meta { text-align: right; }
+.doc-meta h1 { margin: 0; font-size: 18px; color: var(--primary); }
+.doc-meta p { margin: 2px 0; font-size: 13px; color: #475569; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.full { grid-column: span 2; }
+label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #334155; }
+input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+th { background: #f1f5f9; font-size: 12px; text-align: left; padding: 8px; border-bottom: 1px solid var(--border); }
+td { padding: 6px 4px; border-bottom: 1px solid #e2e8f0; }
+td input { padding: 6px; font-size: 13px; }
+.num { text-align: right; }
+.btn { padding: 10px 14px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn-add { background: #e2e8f0; color: #0f172a; width: 100%; margin-bottom: 16px; }
+.btn-wa { background: var(--whatsapp); color: #fff; flex: 1; }
+.btn-print { background: var(--primary); color: #fff; flex: 1; }
+.btn-new { background: #64748b; color: #fff; }
+.btn-del { background: #ef4444; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+.totals { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+.totals-box { width: 240px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+.totals-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; }
+.totals-row.grand { font-weight: 700; font-size: 16px; border-top: 1px solid var(--border); padding-top: 6px; margin-top: 6px; }
+.sig-section { margin-bottom: 16px; }
+canvas { border: 1px solid var(--border); border-radius: 8px; width: 100%; height: 110px; touch-action: none; background: #fff; }
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+@media print {
+body { background: #fff; padding: 0; }
+.container { box-shadow: none; padding: 0; }
+.no-print { display: none !important; }
+input, select, textarea { border: none; padding: 2px 0; background: transparent; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<div>
+<div class="logo-box" onclick="document.getElementById('logoInput').click()" title="Toca para subir el logo">
+<img id="logoPreview" style="display:none;" alt="Logo" />
+<span id="logoPlaceholder" class="logo-placeholder">Daniela Amaro SHOP<br><small>(Toca para poner el logo)</small></span>
+</div>
+<input type="file" id="logoInput" accept="image/*" style="display:none;" onchange="uploadLogo(event)" />
+</div>
+<div class="doc-meta">
+<h1>NOTA DE ENTREGA</h1>
+<p><strong>Nº:</strong> <span id="noteNumber">NE-0001</span></p>
+<p><strong>Daniela Amaro SHOP</strong></p>
+</div>
+</div>
+
+<div class="grid">
+<div>
+<label>Nombre del Cliente *</label>
+<input type="text" id="custName" placeholder="Nombre completo" required />
+</div>
+<div>
+<label>Cédula / RIF</label>
+<input type="text" id="custId" placeholder="V-12345678" />
+</div>
+<div>
+<label>Teléfono WhatsApp (con código de país) *</label>
+<input type="tel" id="custPhone" placeholder="584121234567" required />
+</div>
+<div>
+<label>Condición de Pago</label>
+<select id="creditTerm" onchange="updateDueDate()">
+<option value="7">7 Días de Crédito</option>
+<option value="15" selected>15 Días de Crédito</option>
+<option value="30">30 Días de Crédito</option>
+<option value="0">Fecha de Vencimiento Personalizada</option>
+</select>
+</div>
+<div>
+<label>Fecha de Emisión</label>
+<input type="date" id="issueDate" onchange="updateDueDate()" />
+</div>
+<div>
+<label>Fecha de Vencimiento</label>
+<input type="date" id="dueDate" />
+</div>
+<div class="full">
+<label>Dirección de Entrega / Notas</label>
+<input type="text" id="custAddress" placeholder="Dirección o instrucciones de entrega" />
+</div>
+</div>
+
+<table>
+<thead>
+<tr>
+<th style="width:46%;">Descripción</th>
+<th style="width:16%;">Cant.</th>
+<th style="width:20%;">Precio Unit.</th>
+<th style="width:18%;" class="num">Total</th>
+<th class="no-print"></th>
+</tr>
+</thead>
+<tbody id="itemsBody"></tbody>
+</table>
+<button type="button" class="btn btn-add no-print" onclick="addRow()">+ Agregar Producto / Artículo</button>
+
+<div class="totals">
+<div class="totals-box">
+<div class="totals-row">
+<span>Moneda:</span>
+<select id="currency" style="width:auto; padding:2px 6px;" onchange="calculateTotals()">
+<option value=")</option>
+<option value="Bs.">VES (Bs.)</option>
+</select>
+</div>
+<div class="totals-row grand">
+<span>Total a Crédito:</span>
+<span id="grandTotal">$`0.00</span>
+</div>
+</div>
+</div>
+
+<div class="sig-section">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+<label style="margin:0;">Firma de Recepción del Cliente</label>
+<button type="button" class="no-print" style="font-size:11px; background:none; border:none; color:#2563eb; cursor:pointer;" onclick="clearSignature()">Limpiar Firma</button>
+</div>
+<canvas id="sigCanvas"></canvas>
+</div>
+
+<div class="actions no-print">
+<button type="button" class="btn btn-wa" onclick="sendWhatsApp()">Enviar por WhatsApp</button>
+<button type="button" class="btn btn-print" onclick="window.print()">Imprimir / Guardar PDF</button>
+<button type="button" class="btn btn-new" onclick="newNote()">Nueva Nota</button>
+</div>
+</div>
+
+<script>
+let noteSeq = parseInt(localStorage.getItem('dm_note_seq') || '1', 10);
+const savedLogo = localStorage.getItem('dm_logo');
+if (savedLogo) {
+document.getElementById('logoPreview').src = savedLogo;
+document.getElementById('logoPreview').style.display = 'block';
+document.getElementById('logoPlaceholder').style.display = 'none';
+}
+
+function formatSeq(n) { return 'NE-' + String(n).padStart(4, '0'); }
+document.getElementById('noteNumber').textContent = formatSeq(noteSeq);
+
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('issueDate').value = today;
+updateDueDate();
+
+function updateDueDate() {
+const days = parseInt(document.getElementById('creditTerm').value, 10);
+if (days === 0) return;
+const base = new Date(document.getElementById('issueDate').value + 'T00:00:00');
+base.setDate(base.getDate() + days);
+document.getElementById('dueDate').value = base.toISOString().split('T')[0];
+}
+
+function uploadLogo(e) {
+const file = e.target.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = function(ev) {
+localStorage.setItem('dm_logo', ev.target.result);
+document.getElementById('logoPreview').src = ev.target.result;
+document.getElementById('logoPreview').style.display = 'block';
+document.getElementById('logoPlaceholder').style.display = 'none';
+};
+reader.readAsDataURL(file);
+}
+
+function addRow(desc = '', qty = 1, price = '') {
+const tr = document.createElement('tr');
+tr.innerHTML = &lt;td&gt;&lt;input type="text" class="item-desc" placeholder="Nombre del artículo" value="${desc}" /></td>
+<td><input type="number" class="item-qty" min="1" step="any" value="{price}" oninput="calculateTotals()" /></td>
+<td class="num item-sub">0.00</td>
+<td class="no-print"><button type="button" class="btn-del" onclick="this.closest('tr').remove(); calculateTotals();">X</button></td>
+`;
+document.getElementById('itemsBody').appendChild(tr);
+calculateTotals();
+}
+
+function calculateTotals() {
+const cur = document.getElementById('currency').value;
+let total = 0;
+document.querySelectorAll('#itemsBody tr').forEach(row => {
+const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+const price = parseFloat(row.querySelector('.item-price').value) || 0;
+const sub = qty * price;
+row.querySelector('.item-sub').textContent = sub.toFixed(2);
+total += sub;
+});
+document.getElementById('grandTotal').textContent = ${cur}${total.toFixed(2)};
+}
+
+function sendWhatsApp() {
+const name = document.getElementById('custName').value.trim();
+const rawPhone = document.getElementById('custPhone').value.replace(/\D/g, '');
+if (!name || !rawPhone) {
+alert('Por favor, ingresa el Nombre del Cliente y el Teléfono WhatsApp.');
+return;
+}
+
+const noteNo = document.getElementById('noteNumber').textContent;
+const issue = document.getElementById('issueDate').value;
+const due = document.getElementById('dueDate').value;
+const cur = document.getElementById('currency').value;
+const grandTotal = document.getElementById('grandTotal').textContent;
+
+let itemsText = '';
+document.querySelectorAll('#itemsBody tr').forEach(row => {
+const desc = row.querySelector('.item-desc').value.trim();
+const qty = row.querySelector('.item-qty').value;
+const sub = row.querySelector('.item-sub').textContent;
+if (desc) itemsText += • ${qty}x ${desc}: ${cur}${sub}\n;
+});
+
+const message =
+*NOTA DE ENTREGA - VENTA A CRÉDITO* *Daniela Amaro SHOP* *Nº de Nota:* ${noteNo}
+Fecha:${issue} *Fecha de Vencimiento:* ${due}
+
+Cliente:${name} *Cédula/RIF:* ${document.getElementById('custId').value || 'N/A'}
+
+Artículos Entregados:
+${itemsText || '• (No hay artículos listados)\n'} *TOTAL A CRÉDITO:* ${grandTotal}
+
+Confirmación de recepción de mercancía bajo condiciones de crédito acordadas.`;
+
+const url = https://wa.me/${rawPhone}?text=${encodeURIComponent(message)}`;
+window.open(url, '_blank');
+}
+
+function newNote() {
+if (!confirm('¿Avanzar al siguiente número de Nota de Entrega y limpiar los campos del cliente?')) return;
+noteSeq += 1;
+localStorage.setItem('dm_note_seq', noteSeq);
+document.getElementById('noteNumber').textContent = formatSeq(noteSeq);
+document.getElementById('custName').value = '';
+document.getElementById('custId').value = '';
+document.getElementById('custPhone').value = '';
+document.getElementById('custAddress').value = '';
+document.getElementById('itemsBody').innerHTML = '';
+addRow();
+clearSignature();
+}
+
+const canvas = document.getElementById('sigCanvas');
+const ctx = canvas.getContext('2d');
+let drawing = false;
+
+function resizeCanvas() {
+const ratio = Math.max(window.devicePixelRatio || 1, 1);
+canvas.width = canvas.offsetWidth * ratio;
+canvas.height = canvas.offsetHeight * ratio;
+ctx.scale(ratio, ratio);
+ctx.lineWidth = 2;
+ctx.lineCap = 'round';
+ctx.strokeStyle = '#0f172a';
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+function getPos(e) {
+const rect = canvas.getBoundingClientRect();
+const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+return { x: clientX - rect.left, y: clientY - rect.top };
+}
+
+canvas.addEventListener('mousedown', e => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
+canvas.addEventListener('mousemove', e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); });
+canvas.addEventListener('mouseup', () => drawing = false);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); }, { passive: false });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); }, { passive: false });
+canvas.addEventListener('touchend', () => drawing = false);
+
+function clearSignature() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+addRow();
+</script>
+</body>
+</html>
